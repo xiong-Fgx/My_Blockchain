@@ -2,7 +2,11 @@ package util;
 import java.security.*;
 import java.util.Base64;
 
-public class GetKey {
+/*获取key的字符串表示
+* 输入key类型的数据，将其转换成String类型
+* */
+
+public class Key2String {
     public static String getStringFromKey(Key key){
         return Base64.getEncoder().encodeToString(key.getEncoded());
     }

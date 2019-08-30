@@ -1,7 +1,8 @@
 import java.security.*;
 import java.util.ArrayList;
-import util.GetKey;
+import util.Key2String;
 import util.GetHash;
+import util.Sig;
 
 public class Transaction {
     public String transactionID;
@@ -25,30 +26,77 @@ public class Transaction {
     }
 
     private String calculateHash(){
-        sequence++;
-        String needHash = GetKey.getStringFromKey(sender)
-                + GetKey.getStringFromKey(receiver)
+        sequence++;//sequence是为了避免两个不同的tx中包含相同的内容
+        String needHash = Key2String.getStringFromKey(sender)
+                + Key2String.getStringFromKey(receiver)
                 + Float.toString(value)
                 + sequence;
         return GetHash.getHashSHA256(needHash);
     }
 
     public void generateSignature(PrivateKey privateKey) {
-        String data = util.GetKey.getStringFromKey(sender) + util.GetKey.getStringFromKey(receiver) + Float.toString(value);
-        signature = util.GetSignature.applyECDSASig(privateKey, data);
+        String data = Key2String.getStringFromKey(sender) + Key2String.getStringFromKey(receiver) + Float.toString(value);
+        signature = Sig.applyECDSASig(privateKey, data);
     }
 
     public boolean verifySignature() {
-        String data = util.GetKey.getStringFromKey(sender) + util.GetKey.getStringFromKey(receiver) + Float.toString(value);
-        return util.GetSignature.verifyECDSASig(sender, data, signature);
+        String data = Key2String.getStringFromKey(sender) + Key2String.getStringFromKey(receiver) + Float.toString(value);
+        return Sig.verifyECDSASig(sender, data, signature);
+    }
+
+    public boolean processTransaction() {
+        if(verifySignature() == false) {
+            System.out.println("signature verified failed");
+            return false;
+        }
+
+        for(TransactionInput i : inputs) {
+            i.UTXO = MyBlockchain.UTXOs.get(i.transactionOutputId);
+        }
+
+        if(getInputValue() < MyBlockchain.minimumTX) {
+            System.out.println("input too small, and the minimum is " + MyBlockchain.minimumTX);
+            return false;
+        }
+
+        float leftOver = getInputValue() - value;
+        if(leftOver < 0) {
+            System.out.println("sender do not have enough money!");
+            return false;
+        }
+
+        transactionID = calculateHash();
+        outputs.add(new TransactionOutput(this.receiver, value, transactionID));
+        outputs.add(new TransactionOutput(this.sender, leftOver, transactionID));
+
+        for(TransactionOutput o : outputs) {
+            MyBlockchain.UTXOs.put(o.id, o);
+        }
+
+        for(TransactionInput i : inputs) {
+            if(i.UTXO != null) MyBlockchain.UTXOs.remove(i.UTXO.id);
+        }
+
+        return true;
+    }
+
+    public float getInputValue() {
+        float total = 0;
+        for(TransactionInput i : inputs) {
+            if(i.UTXO != null)
+                total += i.UTXO.value;
+        }
+        return total;
+    }
+
+    public float getOutputValue() {
+        float total = 0;
+        for(TransactionOutput o : outputs) {
+            total += o.value;
+        }
+        return total;
     }
 
 }
 
-class TransactionInput {
 
-}
-
-class TransactionOutput {
-
-}

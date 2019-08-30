@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Block {
@@ -10,6 +11,9 @@ public class Block {
      */
     public String hash;
     public String previousHash;
+    public String merkleRoot;
+    public ArrayList<Transaction> transactions = new ArrayList<Transaction>();
+
     private String data;
     private long timeStamp;
     private int nonce;
@@ -29,7 +33,7 @@ public class Block {
     * 需要根据上一个区块的哈希值+时间戳+当前区块的数据来计算出一个SHA256哈希值
     * */
     public String calculateHash() {
-        String needHash = previousHash + Long.toString(timeStamp) + Integer.toString(nonce) + data;
+        String needHash = previousHash + Long.toString(timeStamp) + Integer.toString(nonce) + data + merkleRoot;
         String calculatedHash = util.GetHash.getHashSHA256(needHash);
         return calculatedHash;
     }
@@ -40,11 +44,25 @@ public class Block {
     * 只有满足前difficulty位都是0，才象征着挖矿结束，得到一个合理的区块。
     * */
     public void mineBlock(int difficulty) {
+        this.merkleRoot = Merkle.getMerkleRoot(transactions);
         String target = new String(new char[difficulty]).replace('\0', '0');
         while(!hash.substring(0,difficulty).equals(target)){
             nonce++;
             hash = calculateHash();
         }
         System.out.println("Block mined! : " + hash);
+    }
+    
+    public boolean addTransaction(Transaction transaction) {
+        if(transaction == null)return false;
+        if(previousHash != "0") {
+            if(!transaction.processTransaction()){
+                System.out.println("Tx failed to process");
+                return false;
+            }
+        }
+        transactions.add(transaction);
+        System.out.println("Tx added to Block successfully!");
+        return true;
     }
 }

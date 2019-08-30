@@ -4,12 +4,12 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 
-public class GetSignature {
+public class Sig {
     public static byte[] applyECDSASig(PrivateKey privateKey, String input){
-        Signature dsa;
+        java.security.Signature dsa;
         byte[] output = new byte[0];
         try {
-            dsa = Signature.getInstance("ECDSA", "BC");
+            dsa = java.security.Signature.getInstance("ECDSA", "BC");
             dsa.initSign(privateKey);
 
             byte[] strByte = input.getBytes();
@@ -24,7 +24,7 @@ public class GetSignature {
 
     public static boolean verifyECDSASig(PublicKey publicKey, String data, byte[] signature) {
         try {
-            Signature ecdsaVerify = Signature.getInstance("ECDSA", "BC");
+            java.security.Signature ecdsaVerify = java.security.Signature.getInstance("ECDSA", "BC");
             ecdsaVerify.initVerify(publicKey);
             ecdsaVerify.update(data.getBytes());
             return ecdsaVerify.verify(signature);

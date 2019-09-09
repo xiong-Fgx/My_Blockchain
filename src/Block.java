@@ -52,7 +52,7 @@ public class Block {
         }
         System.out.println("Block mined! : " + hash);
     }
-    
+
     public boolean addTransaction(Transaction transaction) {
         if(transaction == null)return false;
         if(previousHash != "0") {
